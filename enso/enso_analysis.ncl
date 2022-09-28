@@ -7,71 +7,130 @@
 ;Created on 09/21/2022. 
 ;The script has the following 4 functions:
 ; 1. Read in SST time series and calculate Nino 3.4 Index.
-; 2. Calculate SST climatology and SST climotology anomolies. 
-; 3. Perform EOF analysis on SST_Nino_anomolies, and produce EOF patterns, PC time series, and PC scatter plots.  
+; 2. Calculate SST climatology and SST anomolies. 
+; 3. Perform EOF analysis on SST anomolies and generate EOF patterns.
+; 4. Plot PC scatter plots based on EOF time series.  
 ;*********************************************************
 
 begin
 ; =================================================================
 ; Specify input data and a few parameters.
+; This block contains most adjustable parameters. 
 ; =================================================================
-	yr = (/401, 500/) ; specify the year range to be computed.
-	mn = (yr(0:1)-yr(0))*12 + (/0,11/)
-	f=addfile("b.e12.12ka.001.hose.pop_rgrd.SST.040101-050012.nc","r") ;# read in SST data.
-    sst=f->SST(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
+	case            = 1
+	; 1: HadISST_sst.nc
+	; 2: b.e12.0kaHose02SvNA.SST.030101-090012.nc
+	; 3: b.e12.3ka.SST.010101-060012.nc
+	; 4: b.e12.6ka.SST.010101-060012.nc
+	;b.e12.2XCO2.SST.030101-090012.nc
+	;b.e12.4XCO2.SST.030101-090012.nc
+	;
+	;b.e12.6ka.SST.010101-060012.nc
+	;==============================================================
+	if (case.eq.1) then 
+		; case 1. Reproduction of Takahashi results on HadISST dataset.
+		yr              = (/1870, 2010/)                            ; the whole year range for HadISST dataset.
+		yrc             = (/1979, 2009/)                            ; year range to calculate climotology following Takahashi et al. (2011).
+		fname           = "HadISST_sst.nc"
+		f               = addfile(fname,"r")
+	;==============================================================
+	elseif (case.eq.2) then 
+		; case 2. 0ka.hose.030101-090012
+		yr              = (/301, 900/)
+		yrc             = yr
+		fname           = "b.e12.0kaHose02SvNA.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.3) then 
+		; case 3. b.e12.3ka.SST.010101-060012.nc
+		yr              = (/101, 600/)
+		yrc             = yr
+		fname           = "b.e12.3ka.SST.010101-060012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.4) then 
+		; case 4. b.e12.6ka.SST.010101-060012.nc
+		yr              = (/101, 600/)
+		yrc             = yr
+		fname           = "b.e12.6ka.SST.010101-060012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	end if
+	
+	fontsize        = 0.01                                 ; font size used in the EOF pattern plots. 
+	
+	neof            = 2                                        ; number of EOFs
 
+	latS            = -10                                      ; map range in lat and lon. 
+	latN            = 10
+	lonL            = 140                                      ;140E/. HadISST dataset lon in 0-360. 
+	lonR            = 280                                      ;280E/80W
+
+	mn              = (yr(0:1)-yr(0))*12 + (/0,11/)               ; time in month index for the whole HadISST data from yr 1870 to 2010.
+	mnc             = (/(yrc(0)-yr(0))*12,(yrc(1)-yr(0))*12+11/) ; time in month index for the whole HadISST data from yr 1870 to 2010.
+	
+	nmonths_apr_sep = (yr(1)-yr(0)+1)*6 
+	mn_apr_sep      = ispan(0,nmonths_apr_sep-1, 1)
+	mn_oct_mar      = mn_apr_sep
+
+	itag0           = 0
+	itag1           = 0
+	do i = 0,yr(1)-yr(0)                            ; loop over all the years and allocate month indexes for Arpil to September and October to March.
+		do j = 0,11                                 ; loop over 12 months.
+			if ((j.ge.3).and.(j.le.8)) then
+				mn_apr_sep(itag0) = i*12 + j
+				itag0             = itag0 + 1
+			else
+				mn_oct_mar(itag1) = i*12 + j 
+				itag1             = itag1 +1 
+			end if 
+		end do 
+	end do 
+	
+	if (case.eq.1) then
+		sst             = f->sst(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
+		lat             = sst&latitude
+		sst             = lonFlip(sst) 
+	else 
+		sst             = f->SST(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
+		sst!1="lat"
+		sst!2="lon"
+		lat             = sst&lat
+	end if
+	time            = fspan(yr(0)+0.5/12, yr(1)+11.5/12, (yr(1)-yr(0)+1)*12)
+	
 ; =================================================================
 ; Compute climatology of SST, its anomolies, and the variables in the Nino 3.4 region.
 ; =================================================================
-	sst_climatology      = clmMonLLT(sst(lat|:,lon|:,{time|:})) ;# Compute SST climatology
-	sst_clim_anom        = calcMonAnomLLT(sst(lat|:,lon|:,time|:),sst_climatology) ;# compute the sst anomoly.
- 	sst_nino34_clim_anom = dim_avg_Wrap(dim_avg_Wrap(sst_clim_anom(time|:,{lat|-5:5},{lon|210:270}))) ;# compute average monthly SST anomalies within the Nino 3.4 region.
-	sst_nino34           = dim_avg_Wrap(dim_avg_Wrap(sst(time|:,{lat|-5:5},{lon|210:270}))) ;# compute monthly SST from Nino 3.4 region.
-	sst_nino34_anom      = sst_clim_anom(time|:,{lat|-5:5},{lon|210:270})
+	sst_climatology      = clmMonTLL(sst(mnc(0):mnc(1),:,:)) ;# Compute SST climatology
+	sst_clim_anom        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
 	
-	nummonth = 12
-	sst_nino34_annual_smoothed = runave_Wrap(sst_nino34,nummonth,0) ;# Running nummonth mean SST of Nino 3.4.
+	;nummonth = 12
+	;sst_nino34_annual_smoothed = runave_Wrap(sst_nino34,nummonth,0) ;# Running nummonth mean SST of Nino 3.4.
 	
-	rad = atan(1.)/45.
-    clat = sst&lat
-    clat = sqrt(cos( rad*clat)) ;# sqrt is better for EOF analysis.
-    clat!0 = "lat"
-    clat&lat = sst&lat
-	
-	wgt_sst_nino34_clim_anom = wgt_areaave_Wrap(sst_clim_anom(time|:,{lat|-5:5},{lon|210:270}), clat({-5:5}), 1., 0)
-	wgt_sst_nino34 = wgt_areaave_Wrap(sst(time|:,{lat|-5:5},{lon|210:270}), clat({-5:5}), 1., 0)
-	printVarSummary(wgt_sst_nino34)
-	printVarSummary(wgt_sst_nino34_clim_anom)
-	
+	rad                  = atan(1.)/45.
+	clat                 = lat
+	clat                 = sqrt(cos( rad*clat)) ;# sqrt is better for EOF analysis.
+	clat!0               = "lat"
+	clat&lat             = lat
+
 	print("Finish calculating SST climotology and anomolies ... ...")
 
 ; =================================================================
 ; Figure 0. Plot Nino 3.4 Index.
 ; =================================================================
-	wks = gsn_open_wks("pdf","sst_nino34_anom, smooth vs weighted")
-	;plot_stack= new((/2,dimsizes(sst&time)/),float)
-	;plot_stack(0,:) = sst_nino34_clim_anom
-	;plot_stack(1,:) = wgt_sst_nino34_clim_anom
-	res = True
-	;res@trYMinF = -10.0
-	;res@trYMaxF = 500.0
-	;res@trXMinF = yr(0)
-	;res@trXMaxF = yr(1)
-	;res@vpHeightF= 0.1;0.1
-	;res@vpWidthF = 0.8
-	plot = new(2, "graphic")
-	res@tiYAxisString = "Degrees Celsius"
+	wks                  = gsn_open_wks("pdf","sst_nino34_anom, smooth vs weighted")
+	res                  = True
+	plot                 = new(2, "graphic")
+	res@tiYAxisString    = "Degrees Celsius"
 	res@gsnXYAboveFillColors = "red"
 	res@gsnXYBelowFillColors = "blue"
-	res@gsnYRefLine           = 0.4
-	res@gsnYRefLine           = -0.4
-	res@xyLineColor = "blue"
+	res@gsnYRefLine      = 0.4
+	res@gsnYRefLine      = -0.4
+	res@xyLineColor      = "blue"
 	res@xyLineThicknesses = (/  1.0,   2.0/)          ; make second line thicker
 	res@xyLineColors      = (/"blue","red"/)          ; change line color
-	data = new((/2,dimsizes(sst&time)/),float)
-	data(0,:) = sst_nino34_clim_anom
-	data(1,:) = wgt_sst_nino34_clim_anom
-	plot = gsn_csm_xy(wks,sst&time,data,res)
+	data                 = new((/2,dimsizes(time)/),float)
+	;data(0,:) = sst_nino34_clim_anom
+	;data(1,:) = wgt_sst_nino34_clim_anom
+	;plot = gsn_csm_xy(wks,time,data,res)
 	frame(wks)
 	
 	print("Finish plotting Figure 0 - Nino 3.4 Index ... ...")
@@ -79,89 +138,124 @@ begin
 ; =================================================================
 ; EOF analysis.
 ; =================================================================
-	neof         = 4        ; number of EOFs
 	optEOF       = True       
 	optEOF@jopt  = 0   ; This is the default; most commonly used; no need to specify.
 	optETS       = True
 	optETS@jopt  = 1
-	latS = -5 
-	latN = 5
-	lonL = 210-360
-	lonR = 270-360
 	
-	xw = sst_nino34_anom(lat|:,lon|:,time|:) ;# reorder to make 'time' the last dim.
-	
-	eof      = eofunc_Wrap(xw, neof, optEOF)      
-	eof_ts   = eofunc_ts_Wrap (xw, eof, optETS)
-
+	xw           = sst_clim_anom(:,{latS:latN},{lonL:lonR})
+	eof          = eofunc_n_Wrap(xw, neof, optEOF, 0) 
+	eof_ts       = eofunc_ts_n_Wrap (xw, eof, optETS, 0)
+	;eof_ts      = wk_smooth121(eof_ts)
 	printVarSummary( eof )                         ; examine EOF variables
 	printVarSummary( eof_ts )
 
+	eof_ts       = dim_standardize( eof_ts, 0)         ; normalize by the rightmost dim, which is the highest order of EOF time series.
 ; =================================================================
-; Normalize time series: Sum spatial weights over the area of used
+; Regress
 ; =================================================================
-	dimxw  = dimsizes( xw )
-	mln    = dimxw(1)
-	sumWgt = mln*sum( clat({lat|latS:latN}) )
-	;print(sumWgt)
-	eof_ts1 = eof_ts/sumWgt
-	printVarSummary( eof_ts1 )
-;============================================================
-; PLOTS
-;============================================================
-	wks = gsn_open_wks("png","enso_eof")         ; send graphics to PNG file
-	plot_eof = new(neof,graphic)                ; create graphic array
+	eof_regress  = eof
+	eof_regress  = (/ regCoef_n(eof_ts, xw, 1, 0) /)
+	
+;*******************************************
+; Figure 1. EOF pattern plots.
+;*******************************************
+	wks          = gsn_open_wks("pdf", fname + ".enso_eof_regress")         ; send graphics to PNG file
+	plot_eof     = new(neof,graphic)                ; create graphic array
                                           ; only needed if paneling
 ; EOF patterns
-
 	res                      = True         
 	res@gsnDraw              = False        ; don't draw yet
 	res@gsnFrame             = False        ; don't advance frame yet
 	res@gsnAddCyclic         = False        ; plotted data are not cyclic
+	res@gsnStringFontHeightF = fontsize
+	res@gsnPolarLableFontHeightF = fontsize
+	res@tmXBLabelFontHeightF = fontsize
+	res@tmYLLabelFontHeightF = fontsize
 	
 	res@mpCenterLonF         = 180.
-	;res@mpFillOn             = False        ; turn off map fill
-	res@mpMinLatF            = min(xw&lat-1) ;latS         ; zoom in on map
-	res@mpMaxLatF            = max(xw&lat+1) ;latN
-	res@mpMinLonF            = min(xw&lon-1) ;lonL
-	res@mpMaxLonF            = max(xw&lon+1) ;lonR
-	res@tiYAxisString        = " "
+	;res@mpFillOn            = False        ; turn off map fill
+	res@mpMinLatF            = latS         ; zoom in on map
+	res@mpMaxLatF            = latN
+	res@mpMinLonF            = lonL
+	res@mpMaxLonF            = lonR
+	res@mpLandFillColor      = "gray70"
+	
+	res@tiYAxisString        = " "          ; no y label.
+	
 	res@cnFillOn             = True         ; turn on color fill
 	res@cnLinesOn            = True        ; True is default
 	res@cnLineLabelsOn       = True        ; True is default
-	;res@cnFillPalette        = "BlWhRe"     ; set color map
-	res@cnFillPalette        = "posneg_1"
-	res@lbLabelBarOn         = False        ; turn off individual lb's
+	;res@cnFillPalette       = "BlWhRe"     ; set color map
+	;res@cnFillPalette       = "amwg_blueyellowred"
+	res@cnFillPalette        = "temp_19lev"
+	res@cnLevelSelectionMode = "ExplicitLevels"
+
+	res@lbLabelBarOn         = False       ; turn off individual lb's
 										  ; set symmetric plot min/max
-	symMinMaxPlt(eof, 16, False, res)       ; contributed.ncl
+	;symMinMaxPlt(eof, 16, False, res)       ; contributed.ncl
 
 	; panel plot only resources
 	resP                     = True         ; modify the panel plot
 	resP@gsnMaximize         = True         ; large format
 	resP@gsnPanelLabelBar    = True         ; add common colorbar
 	
-  ;yStrt                    = yyyymm(0)/100
-  ;yLast                    = yyyymm(nyrs-1)/100
-  yStrt = yr(0)
-  yLast = yr(1)
-	resP@gsnPanelMainString  = "EOF patterns"
-
-;*******************************************
-; Figure 1. EOF pattern plots.
-;*******************************************
-	do n=0,neof-1
-		res@gsnLeftString  = "EOF "+(n+1)
-		res@gsnRightString = sprintf("%5.1f", eof@pcvar(n)) +"%"
-		plot_eof(n)=gsn_csm_contour_map(wks,eof(n,:,:),res)
+  	;yStrt                    = yyyymm(0)/100
+  	;yLast                    = yyyymm(nyrs-1)/100
+  	yStrt = yr(0)
+  	yLast = yr(1)
+	resP@gsnPanelMainString   = "EOF patterns"
+	resP@cnLevels             = fspan(-0.7,0.7,15)
+	
+	;============================================================
+	; add custom label bar
+	;============================================================
+	cmap                       = read_colormap_file( "temp_19lev")   ;20 colors
+	col                        = cmap 
+	ncol                       = dimsizes( col(:,0))
+	lev                        = fspan( -0.1*9, 0.1*9, ncol-1)
+	lab = sprintf( "%3.1f", lev)
+	lab(0::2) = ""
+	
+	lbres                      = True
+	lbres@lbPerimOn            = False               ; no label bar box
+	lbres@lbOrientation        = "Horizontal"        ; orientation
+	lbres@vpWidthF             = 0.5                 ; size
+	lbres@vpHeightF            = 0.042
+	lbres@lbLabelFontHeightF   = 0.01                ; label font height
+	lbres@lbLabelAlignment     = "InteriorEdges"     ; where to label
+	lbres@lbMonoFillPattern    = True                ; fill sold
+	lbres@lbFillColors         = col      ; must be RGB triplets
+	
+	; To customize the color levels and labels.
+	;levels = (/-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7/)
+	;labels = (/"-0.7","-0.6","-0.5","-0.4","-0.3","-0.2","-0.1","0.0","0.1","0.2","0.3","0.4","0.5","0.6","0.7"/)
+	;nlevels = dimsizes(levels) 
+	
+	posx = (/0.02, 0.02/)
+	posy = (/0.95, 0.75/)
+	res@vpWidthF              = 0.95
+	;res@vpHeightF            = 0.4
+	;res@vpKeepAspect         = False
+	do n = 0, neof-1
+		res@vpXF   = posx(n)
+		res@vpYF   = posy(n)
+		res@gsnLeftString     = "EOF "+(n+1)
+		res@gsnRightString    = sprintf("%5.1f", eof@pcvar(n)) +"%"
+		plot_eof(n)           = gsn_csm_contour_map(wks,eof_regress(n,:,:),res)
 	end do
-	gsn_panel(wks,plot_eof,(/neof,1/),resP)     ; now draw as one plot
+	; plot customized colobar.
+	gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.57, lbres)
+	
+	draw(wks)
+	frame(wks)
 
 ;*******************************************
 ; Figure 2. EOF time series plot.
 ;*******************************************
 	eof_ts@long_name        = "Amplitude"
-	wks = gsn_open_wks("png","enso_eof_ts")         ; send graphics to PNG file
-	plot_eof_ts = new(neof,graphic)                ; create graphic array
+	wks                     = gsn_open_wks("pdf","enso_eof_ts")         ; send graphics to PNG file
+	plot_eof_ts             = new(neof,graphic)                ; create graphic array
 
 	; EOF time series  [bar form]
 	rts           = True
@@ -195,24 +289,36 @@ begin
 	do n=0,neof-1
 		rts@gsnLeftString  = "EOF "+(n+1)
 		rts@gsnRightString = sprintf("%5.1f", eof@pcvar(n)) +"%"
-		plot_eof_ts(n) = gsn_csm_xy (wks,sst&time,eof_ts(n,:),rts)
+		plot_eof_ts(n) = gsn_csm_xy (wks,time,eof_ts(n,:),rts)
 	end do
 	gsn_panel(wks,plot_eof_ts,(/neof,1/),rtsP)     ; now draw as one plot
   
 ;*******************************************
 ; Figure 3. Scatter plot of PC1 and PC2.
 ;*******************************************  
-	wks = gsn_open_wks("png","enso_pc_scatter")     ; send graphics to PNG file
+	wks                   = gsn_open_wks("pdf", fname + ".enso_pc_scatter")     ; send graphics to PNG file
 	rcs                   = True                     ; plot mods desired
 	rcs@tiMainString      = "PC1-PC2 scatter plot"   ; add title
-	rcs@tiXAxisString        = "PC1"  
-	rcs@tiYAxisString        = "PC2"
+	rcs@tiXAxisString     = "PC1"  
+	rcs@tiYAxisString     = "PC2"
 	rcs@xyMarkLineModes   = "Markers"                ; choose which have markers
 	rcs@xyMarkers         =  16                      ; choose type of marker  
 	rcs@xyMarkerColor     = "red"                    ; Marker color
 	rcs@xyMarkerSizeF     = 0.01                     ; Marker size (default 0.01)
-	
+	rcs@trYMinF           = -6
+	rcs@trYMaxF	          = 4
+	rcs@trXMinF 	      = -4
+	rcs@trXMaxF           = 6
 	rcs@tmLabelAutoStride = True                     ; nice tick mark labels
 	
-	plot_pc_scatter = gsn_csm_xy (wks,eof_ts(1,:), eof_ts(2,:), rcs)
+	;plot_pc_scatter      = gsn_csm_xy (wks,eof_ts(0,:), eof_ts(1,:), rcs)
+	plot_pc_scatter_apr_sep = gsn_csm_xy (wks,eof_ts(0,mn_apr_sep), eof_ts(1,mn_apr_sep), rcs)
+	
+	rcs@xyMarkerColor     = "blue"
+	plot_pc_scatter_oct_mar = gsn_csm_xy (wks,eof_ts(0,mn_oct_mar), eof_ts(1,mn_oct_mar), rcs)
+	
+	overlay(plot_pc_scatter_apr_sep, plot_pc_scatter_oct_mar)
+	
+	draw( wks)
+	frame( wks)
 end
