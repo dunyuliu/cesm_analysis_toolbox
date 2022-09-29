@@ -17,15 +17,22 @@ begin
 ; Specify input data and a few parameters.
 ; This block contains most adjustable parameters. 
 ; =================================================================
-	case            = 1
+	case            = 6
 	; 1: HadISST_sst.nc
 	; 2: b.e12.0kaHose02SvNA.SST.030101-090012.nc
 	; 3: b.e12.3ka.SST.010101-060012.nc
 	; 4: b.e12.6ka.SST.010101-060012.nc
-	;b.e12.2XCO2.SST.030101-090012.nc
-	;b.e12.4XCO2.SST.030101-090012.nc
-	;
-	;b.e12.6ka.SST.010101-060012.nc
+	; 5: b.e12.9ka.SST.040101-090012.nc
+	; 6: b.e12.12ka.SST.030101-080012.nc
+	; 7: b.e12.12kaHose01SvNA.SST.030101-090012.nc
+	; 8: b.e12.12kaHose02SvNA.SST.030101-090012.nc
+	; 9: b.e12.15ka.SST.020101-070012.nc
+	; 10: b.e12.15kaHose02SvNA.SST.030101-090012.nc
+	; 11: b.e12.18ka.SST.020101-070012.nc
+	; 12: b.e12.21ka.SST.050101-100012.nc
+	; 13: b.e12.21kaHose02SvNA.SST.030101-060012.nc
+	; 14: b.e12.2XCO2.SST.030101-090012.nc
+	; 15: b.e12.4XCO2.SST.030101-090012.nc
 	;==============================================================
 	if (case.eq.1) then 
 		; case 1. Reproduction of Takahashi results on HadISST dataset.
@@ -51,6 +58,24 @@ begin
 		yr              = (/101, 600/)
 		yrc             = yr
 		fname           = "b.e12.6ka.SST.010101-060012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.5) then 
+		; case 5. b.e12.9ka.SST.040101-090012.nc
+		yr              = (/401, 900/)
+		yrc             = yr
+		fname           = "b.e12.9ka.SST.040101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.6) then 
+		; case 6. b.e12.12ka.SST.030101-080012.nc
+		yr              = (/301, 800/)
+		yrc             = yr
+		fname           = "b.e12.12ka.SST.030101-080012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.7) then 
+		; case 7. b.e12.12kaHose01SvNA.SST.030101-090012.nc
+		yr              = (/301, 900/)
+		yrc             = yr
+		fname           = "b.e12.12kaHose01SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	end if
 	
