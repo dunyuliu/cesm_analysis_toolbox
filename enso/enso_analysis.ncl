@@ -17,7 +17,7 @@ begin
 ; Specify input data and a few parameters.
 ; This block contains most adjustable parameters. 
 ; =================================================================
-	case            = 6
+	case            = 2
 	; 1: HadISST_sst.nc
 	; 2: b.e12.0kaHose02SvNA.SST.030101-090012.nc
 	; 3: b.e12.3ka.SST.010101-060012.nc
@@ -33,6 +33,8 @@ begin
 	; 13: b.e12.21kaHose02SvNA.SST.030101-060012.nc
 	; 14: b.e12.2XCO2.SST.030101-090012.nc
 	; 15: b.e12.4XCO2.SST.030101-090012.nc
+	;
+	;b.e12.6ka.SST.010101-060012.nc
 	;==============================================================
 	if (case.eq.1) then 
 		; case 1. Reproduction of Takahashi results on HadISST dataset.
@@ -89,7 +91,7 @@ begin
 	lonR            = 280                                      ;280E/80W
 
 	mn              = (yr(0:1)-yr(0))*12 + (/0,11/)               ; time in month index for the whole HadISST data from yr 1870 to 2010.
-	mnc             = (/(yrc(0)-yr(0))*12,(yrc(1)-yr(0))*12+11/) ; time in month index for the whole HadISST data from yr 1870 to 2010.
+	mnc             = (/(yrc(0)-yr(0))*12,(yrc(1)-yr(0))*12+11/) ; time in month index for the whole HadISST data from yr 1979 to 2009.
 	
 	nmonths_apr_sep = (yr(1)-yr(0)+1)*6 
 	mn_apr_sep      = ispan(0,nmonths_apr_sep-1, 1)
@@ -168,10 +170,38 @@ begin
 	optETS       = True
 	optETS@jopt  = 1
 	
-	xw           = sst_clim_anom(:,{latS:latN},{lonL:lonR})
-	eof          = eofunc_n_Wrap(xw, neof, optEOF, 0) 
-	eof_ts       = eofunc_ts_n_Wrap (xw, eof, optETS, 0)
-	;eof_ts      = wk_smooth121(eof_ts)
+	xw0          = sst_clim_anom(mnc(0):mnc(1),{latS:latN},{lonL:lonR})
+	xw_all0      = sst_clim_anom(:,{latS:latN},{lonL:lonR})     ; xw and xw_all are only differed for the HadISST set.
+	
+	xw           = dtrend_leftdim(xw0, False)
+	xw_all       = dtrend_leftdim(xw_all0, False)
+	
+	printVarSummary(xw0)
+	printVarSummary(xw)
+	
+	eof          = eofunc_n_Wrap(xw, neof, optEOF, 0)                     ; eof is computed with selected time periods for the HadISST set.
+
+	if (ismissing(eof(0,{0.},{270.}) .lt. 0.) ) then; reverse eof if eof1 is negative in the eastern equatorial Pacific.
+		print("EOF1 (0,270)<0 missing ... ... Try (0,255) ... ...")
+		if (eof(0,{0.},{255.}) .lt. 0.) then
+			eof(0,:,:) = -eof(0,:,:)
+		end if
+	else 
+		if(eof(0,{0.},{270.}) .lt. 0.) then
+			eof(0,:,:) = -eof(0,:,:)
+		end if
+	end if 
+	if (ismissing(eof(1,{0.},{270.}) .gt. 0.) ) then; reverse eof if eof1 is negative in the eastern equatorial Pacific.
+		print("EOF2 (0,270)>0 missing ... ... Try (0,255) ... ...")
+		if (eof(1,{0.},{255.}) .gt. 0.) then
+			eof(1,:,:) = -eof(1,:,:)
+		end if
+	else 
+		if(eof(1,{0.},{270.}) .gt. 0.) then
+			eof(1,:,:) = -eof(1,:,:)
+		end if
+	end if 
+	eof_ts       = eofunc_ts_n_Wrap (xw_all, eof, optETS, 0)              ; then, the whole dataset is projected to the calculated eof patterns to get PC time series.
 	printVarSummary( eof )                         ; examine EOF variables
 	printVarSummary( eof_ts )
 
@@ -180,7 +210,7 @@ begin
 ; Regress
 ; =================================================================
 	eof_regress  = eof
-	eof_regress  = (/ regCoef_n(eof_ts, xw, 1, 0) /)
+	eof_regress  = (/ regCoef_n(eof_ts, xw_all, 1, 0) /)
 	
 ;*******************************************
 ; Figure 1. EOF pattern plots.
@@ -198,7 +228,7 @@ begin
 	res@tmXBLabelFontHeightF = fontsize
 	res@tmYLLabelFontHeightF = fontsize
 	
-	res@mpCenterLonF         = 180.
+	res@mpCenterLonF         = 210.
 	;res@mpFillOn            = False        ; turn off map fill
 	res@mpMinLatF            = latS         ; zoom in on map
 	res@mpMaxLatF            = latN
@@ -215,7 +245,7 @@ begin
 	;res@cnFillPalette       = "amwg_blueyellowred"
 	res@cnFillPalette        = "temp_19lev"
 	res@cnLevelSelectionMode = "ExplicitLevels"
-
+	res@cnLevels             = fspan(-0.7,0.7,15)
 	res@lbLabelBarOn         = False       ; turn off individual lb's
 										  ; set symmetric plot min/max
 	;symMinMaxPlt(eof, 16, False, res)       ; contributed.ncl
