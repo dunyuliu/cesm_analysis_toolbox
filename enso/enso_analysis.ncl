@@ -293,10 +293,10 @@ begin
 	
 	;posx = (/0.02, 0.02/)
 	;posy = (/0.95, 0.75/)
-	posx = (/0.02, 0.02/)
+	posx = (/0.05, 0.05/)
 	posy = (/0.95, 0.48/)
 	res@vpWidthF              = 0.90
-	;res@vpHeightF            = 0.35
+	res@vpHeightF             = 0.35
 	;res@vpKeepAspect         = False
 	do n = 0, neof-1
 		res@vpXF   = posx(n)
