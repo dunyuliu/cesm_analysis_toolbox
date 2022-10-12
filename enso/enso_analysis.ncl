@@ -17,7 +17,7 @@ begin
 ; Specify input data and a few parameters.
 ; This block contains most adjustable parameters. 
 ; =================================================================
-	case            = 2
+	case            = 1
 	; 1: HadISST_sst.nc
 	; 2: b.e12.0kaHose02SvNA.SST.030101-090012.nc
 	; 3: b.e12.3ka.SST.010101-060012.nc
@@ -87,7 +87,7 @@ begin
 
 	latS            = -10                                      ; map range in lat and lon. 
 	latN            = 10
-	lonL            = 140                                      ;140E/. HadISST dataset lon in 0-360. 
+	lonL            = 110                                      ;140E/. HadISST dataset lon in 0-360. 
 	lonR            = 280                                      ;280E/80W
 
 	mn              = (yr(0:1)-yr(0))*12 + (/0,11/)               ; time in month index for the whole HadISST data from yr 1870 to 2010.
@@ -128,6 +128,7 @@ begin
 ; =================================================================
 	sst_climatology      = clmMonTLL(sst(mnc(0):mnc(1),:,:)) ;# Compute SST climatology
 	sst_clim_anom        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
+	;sst_clim_anom        = dtrend_leftdim(sst_clim_anom, False) ; detrend the whole dataset.
 	
 	;nummonth = 12
 	;sst_nino34_annual_smoothed = runave_Wrap(sst_nino34,nummonth,0) ;# Running nummonth mean SST of Nino 3.4.
@@ -168,15 +169,15 @@ begin
 	optEOF       = True       
 	optEOF@jopt  = 0   ; This is the default; most commonly used; no need to specify.
 	optETS       = True
-	optETS@jopt  = 1
+	optETS@jopt  = 0   ; if we calculate EOFs using a covariance matrix.
 	
-	xw0          = sst_clim_anom(mnc(0):mnc(1),{latS:latN},{lonL:lonR})
-	xw_all0      = sst_clim_anom(:,{latS:latN},{lonL:lonR})     ; xw and xw_all are only differed for the HadISST set.
+	xw           = sst_clim_anom(mnc(0):mnc(1),{latS:latN},{lonL:lonR})
+	xw_all       = sst_clim_anom(:,{latS:latN},{lonL:lonR})     ; xw and xw_all are only differed for the HadISST set.
 	
-	xw           = dtrend_leftdim(xw0, False)
-	xw_all       = dtrend_leftdim(xw_all0, False)
+	;xw           = dtrend_leftdim(xw0, False)
+	;xw_all       = dtrend_leftdim(xw_all0, False)
 	
-	printVarSummary(xw0)
+	;printVarSummary(xw0)
 	printVarSummary(xw)
 	
 	eof          = eofunc_n_Wrap(xw, neof, optEOF, 0)                     ; eof is computed with selected time periods for the HadISST set.
@@ -209,9 +210,12 @@ begin
 ; =================================================================
 ; Regress
 ; =================================================================
-	eof_regress  = eof
-	eof_regress  = (/ regCoef_n(eof_ts, xw_all, 1, 0) /)
+	;eof_regress  = eof
+	;eof_regress  = (/ regCoef_n(eof_ts, xw_all, 1, 0) /)
 	
+	eof_regree   = sst_clim_anom(0:neof-1,:,:)
+	eof_regress  = (/ regCoef_n(eof_ts, sst_clim_anom, 1, 0) /)
+
 ;*******************************************
 ; Figure 1. EOF pattern plots.
 ;*******************************************
@@ -230,10 +234,10 @@ begin
 	
 	res@mpCenterLonF         = 210.
 	;res@mpFillOn            = False        ; turn off map fill
-	res@mpMinLatF            = latS         ; zoom in on map
-	res@mpMaxLatF            = latN
-	res@mpMinLonF            = lonL
-	res@mpMaxLonF            = lonR
+	;res@mpMinLatF            = latS         ; zoom in on map
+	;res@mpMaxLatF            = latN
+	;res@mpMinLonF            = lonL
+	;res@mpMaxLonF            = lonR
 	res@mpLandFillColor      = "gray70"
 	
 	res@tiYAxisString        = " "          ; no y label.
@@ -245,7 +249,7 @@ begin
 	;res@cnFillPalette       = "amwg_blueyellowred"
 	res@cnFillPalette        = "temp_19lev"
 	res@cnLevelSelectionMode = "ExplicitLevels"
-	res@cnLevels             = fspan(-0.7,0.7,15)
+	res@cnLevels             = fspan(-0.9,0.9,19)
 	res@lbLabelBarOn         = False       ; turn off individual lb's
 										  ; set symmetric plot min/max
 	;symMinMaxPlt(eof, 16, False, res)       ; contributed.ncl
@@ -260,7 +264,6 @@ begin
   	yStrt = yr(0)
   	yLast = yr(1)
 	resP@gsnPanelMainString   = "EOF patterns"
-	resP@cnLevels             = fspan(-0.7,0.7,15)
 	
 	;============================================================
 	; add custom label bar
@@ -287,10 +290,12 @@ begin
 	;labels = (/"-0.7","-0.6","-0.5","-0.4","-0.3","-0.2","-0.1","0.0","0.1","0.2","0.3","0.4","0.5","0.6","0.7"/)
 	;nlevels = dimsizes(levels) 
 	
+	;posx = (/0.02, 0.02/)
+	;posy = (/0.95, 0.75/)
 	posx = (/0.02, 0.02/)
-	posy = (/0.95, 0.75/)
-	res@vpWidthF              = 0.95
-	;res@vpHeightF            = 0.4
+	posy = (/0.95, 0.48/)
+	res@vpWidthF              = 0.90
+	;res@vpHeightF            = 0.35
 	;res@vpKeepAspect         = False
 	do n = 0, neof-1
 		res@vpXF   = posx(n)
@@ -300,8 +305,8 @@ begin
 		plot_eof(n)           = gsn_csm_contour_map(wks,eof_regress(n,:,:),res)
 	end do
 	; plot customized colobar.
-	gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.57, lbres)
-	
+	;gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.57, lbres)
+	gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.06, lbres)
 	draw(wks)
 	frame(wks)
 
