@@ -115,6 +115,7 @@ begin
 		sst             = f->sst(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
 		lat             = sst&latitude
 		sst             = lonFlip(sst) 
+		sst             = where(sst.eq.-1000., -1.8, sst)
 	else 
 		sst             = f->SST(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
 		sst!1="lat"
@@ -213,7 +214,7 @@ begin
 	;eof_regress  = eof
 	;eof_regress  = (/ regCoef_n(eof_ts, xw_all, 1, 0) /)
 	
-	eof_regree   = sst_clim_anom(0:neof-1,:,:)
+	eof_regress   = sst_clim_anom(0:neof-1,:,:)
 	eof_regress  = (/ regCoef_n(eof_ts, sst_clim_anom, 1, 0) /)
 
 ;*******************************************
@@ -226,7 +227,7 @@ begin
 	res                      = True         
 	res@gsnDraw              = False        ; don't draw yet
 	res@gsnFrame             = False        ; don't advance frame yet
-	res@gsnAddCyclic         = False        ; plotted data are not cyclic
+	res@gsnAddCyclic         = True        ; plotted data are not cyclic
 	res@gsnStringFontHeightF = fontsize
 	res@gsnPolarLableFontHeightF = fontsize
 	res@tmXBLabelFontHeightF = fontsize
