@@ -17,7 +17,7 @@ begin
 ; Specify input data and a few parameters.
 ; This block contains most adjustable parameters. 
 ; =================================================================
-	case            = 1
+	;case            = 4
 	; 1: HadISST_sst.nc
 	; 2: b.e12.0kaHose02SvNA.SST.030101-090012.nc
 	; 3: b.e12.3ka.SST.010101-060012.nc
@@ -79,8 +79,56 @@ begin
 		yrc             = yr
 		fname           = "b.e12.12kaHose01SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.8) then 
+		; case 8. b.e12.12kaHose02SvNA.SST.030101-090012.nc
+		yr              = (/301, 900/)
+		yrc             = yr
+		fname           = "b.e12.12kaHose02SvNA.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.9) then 
+		; case 9. b.e12.15ka.SST.020101-070012.nc
+		yr              = (/201, 700/)
+		yrc             = yr
+		fname           = "b.e12.15ka.SST.020101-070012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.10) then 
+		; case 10. b.e12.15kaHose02SvNA.SST.030101-090012.nc
+		yr              = (/301, 900/)
+		yrc             = yr
+		fname           = "b.e12.15kaHose02SvNA.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.11) then 
+		; case 11. b.e12.18ka.SST.020101-070012.nc
+		yr              = (/201, 700/)
+		yrc             = yr
+		fname           = "b.e12.18ka.SST.020101-070012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.12) then 
+		; case 12. b.e12.21ka.SST.050101-100012.nc
+		yr              = (/501, 1000/)
+		yrc             = yr
+		fname           = "b.e12.21ka.SST.050101-100012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.13) then 
+		; case 13. b.e12.21kaHose02SvNA.SST.030101-060012.nc
+		yr              = (/301, 600/)
+		yrc             = yr
+		fname           = "b.e12.21kaHose02SvNA.SST.030101-060012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.14) then 
+		; case 14. b.e12.2XCO2.SST.030101-090012.nc
+		yr              = (/301, 900/)
+		yrc             = yr
+		fname           = "b.e12.2XCO2.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.15) then 
+		; case 15. b.e12.4XCO2.SST.030101-090012.nc
+		yr              = (/301, 900/)
+		yrc             = yr
+		fname           = "b.e12.4XCO2.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	end if
-	
+
 	fontsize        = 0.01                                 ; font size used in the EOF pattern plots. 
 	
 	neof            = 2                                        ; number of EOFs
@@ -127,10 +175,24 @@ begin
 ; =================================================================
 ; Compute climatology of SST, its anomolies, and the variables in the Nino 3.4 region.
 ; =================================================================
-	sst_climatology      = clmMonTLL(sst(mnc(0):mnc(1),:,:)) ;# Compute SST climatology
-	sst_clim_anom        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
-	;sst_clim_anom        = dtrend_leftdim(sst_clim_anom, False) ; detrend the whole dataset.
+	sst_climatology       = clmMonTLL(sst(mnc(0):mnc(1),:,:)) ;# Compute SST climatology
+	sst_clim_anom1        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
 	
+	;sst_clim_anom        = dtrend_leftdim(sst_clim_anom, False) ; detrend the whole dataset.
+	if (case.lt.1) then
+		sst_clim_anom        = dtrend_quadratic_msg_n(sst_clim_anom1, True, True, 0)
+		sst_clim_anom!0      = "time"
+		sst_clim_anom!1      = "lat"
+		sst_clim_anom!2      = "lon"
+		sst_clim_anom&time   = sst_clim_anom1&time
+		sst_clim_anom&lat    = sst_clim_anom1&lat
+		sst_clim_anom&lon    = sst_clim_anom1&lon
+	else
+		sst_clim_anom        = sst_clim_anom1
+	end if 
+
+	printVarSummary(sst_clim_anom1)
+	printVarSummary(sst_clim_anom)
 	;nummonth = 12
 	;sst_nino34_annual_smoothed = runave_Wrap(sst_nino34,nummonth,0) ;# Running nummonth mean SST of Nino 3.4.
 	
