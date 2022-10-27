@@ -10,7 +10,6 @@
 ; 2. Calculate SST climatology and SST anomolies. 
 ; 3. Perform EOF analysis on SST anomolies and generate EOF patterns.
 ; 4. Plot PC scatter plots based on EOF time series.  
-; 5. NOTE: drop the first 100 yrs of hosing runs and the first 300 years of 2X&4XCO2 runs
 ;*********************************************************
 
 begin
@@ -34,8 +33,8 @@ begin
 	; 13: b.e12.21kaHose02SvNA.SST.030101-060012.nc
 	; 14: b.e12.2XCO2.SST.030101-090012.nc
 	; 15: b.e12.4XCO2.SST.030101-090012.nc
-	; 16: b.e12.0ka.SST.000101-150012.nc
 	;
+	;b.e12.6ka.SST.010101-060012.nc
 	;==============================================================
 	if (case.eq.1) then 
 		; case 1. Reproduction of Takahashi results on HadISST dataset.
@@ -46,7 +45,7 @@ begin
 	;==============================================================
 	elseif (case.eq.2) then 
 		; case 2. 0ka.hose.030101-090012
-		yr              = (/401, 900/)
+		yr              = (/301, 900/)
 		yrc             = yr
 		fname           = "b.e12.0kaHose02SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
@@ -76,13 +75,13 @@ begin
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.7) then 
 		; case 7. b.e12.12kaHose01SvNA.SST.030101-090012.nc
-		yr              = (/401, 900/)
+		yr              = (/301, 900/)
 		yrc             = yr
 		fname           = "b.e12.12kaHose01SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.8) then 
 		; case 8. b.e12.12kaHose02SvNA.SST.030101-090012.nc
-		yr              = (/401, 900/)
+		yr              = (/301, 900/)
 		yrc             = yr
 		fname           = "b.e12.12kaHose02SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
@@ -94,7 +93,7 @@ begin
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.10) then 
 		; case 10. b.e12.15kaHose02SvNA.SST.030101-090012.nc
-		yr              = (/401, 900/)
+		yr              = (/301, 900/)
 		yrc             = yr
 		fname           = "b.e12.15kaHose02SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
@@ -112,28 +111,22 @@ begin
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.13) then 
 		; case 13. b.e12.21kaHose02SvNA.SST.030101-060012.nc
-		yr              = (/401, 600/)
+		yr              = (/301, 600/)
 		yrc             = yr
 		fname           = "b.e12.21kaHose02SvNA.SST.030101-060012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.14) then 
 		; case 14. b.e12.2XCO2.SST.030101-090012.nc
-		yr              = (/601, 900/)
+		yr              = (/301, 900/)
 		yrc             = yr
 		fname           = "b.e12.2XCO2.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.15) then 
 		; case 15. b.e12.4XCO2.SST.030101-090012.nc
-		yr              = (/601, 900/)
+		yr              = (/301, 900/)
 		yrc             = yr
 		fname           = "b.e12.4XCO2.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
-	elseif (case.eq.16) then
-                ; case 16. b.e12.0ka.SST.000101-150012.nc
-                yr              = (/101, 1500/)
-                yrc             = yr
-                fname           = "b.e12.0ka.SST.000101-150012.nc"
-                f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	end if
 
 	fontsize        = 0.01                                 ; font size used in the EOF pattern plots. 
@@ -186,8 +179,7 @@ begin
 	sst_clim_anom1        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
 	
 	;sst_clim_anom        = dtrend_leftdim(sst_clim_anom, False) ; detrend the whole dataset.
-
-	if (case.gt.1) then
+	if (case.lt.1) then
 		sst_clim_anom        = dtrend_quadratic_msg_n(sst_clim_anom1, True, True, 0)
 		sst_clim_anom!0      = "time"
 		sst_clim_anom!1      = "lat"
@@ -196,13 +188,7 @@ begin
 		sst_clim_anom&lat    = sst_clim_anom1&lat
 		sst_clim_anom&lon    = sst_clim_anom1&lon
 	else
-		sst_clim_anom        = dtrend_quadratic_msg_n(sst_clim_anom1, True, True, 0)
-		sst_clim_anom!0      = "time"
-		sst_clim_anom!1      = "lat"
-		sst_clim_anom!2      = "lon"
-		sst_clim_anom&time   = sst_clim_anom1&time
-		sst_clim_anom&lat    = sst_clim_anom1&latitude
-		sst_clim_anom&lon    = sst_clim_anom1&longitude
+		sst_clim_anom        = sst_clim_anom1
 	end if 
 
 	printVarSummary(sst_clim_anom1)
