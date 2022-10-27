@@ -10,6 +10,7 @@
 ; 2. Calculate SST climatology and SST anomolies. 
 ; 3. Perform EOF analysis on SST anomolies and generate EOF patterns.
 ; 4. Plot PC scatter plots based on EOF time series.  
+; 5. NOTE: drop the first 100 yrs of hosing runs and the first 300 years of 2X&4XCO2 runs
 ;*********************************************************
 
 begin
@@ -17,7 +18,7 @@ begin
 ; Specify input data and a few parameters.
 ; This block contains most adjustable parameters. 
 ; =================================================================
-	case            = 2
+	;case            = 4
 	; 1: HadISST_sst.nc
 	; 2: b.e12.0kaHose02SvNA.SST.030101-090012.nc
 	; 3: b.e12.3ka.SST.010101-060012.nc
@@ -33,8 +34,8 @@ begin
 	; 13: b.e12.21kaHose02SvNA.SST.030101-060012.nc
 	; 14: b.e12.2XCO2.SST.030101-090012.nc
 	; 15: b.e12.4XCO2.SST.030101-090012.nc
+	; 16: b.e12.0ka.SST.000101-150012.nc
 	;
-	;b.e12.6ka.SST.010101-060012.nc
 	;==============================================================
 	if (case.eq.1) then 
 		; case 1. Reproduction of Takahashi results on HadISST dataset.
@@ -45,7 +46,7 @@ begin
 	;==============================================================
 	elseif (case.eq.2) then 
 		; case 2. 0ka.hose.030101-090012
-		yr              = (/301, 900/)
+		yr              = (/401, 900/)
 		yrc             = yr
 		fname           = "b.e12.0kaHose02SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
@@ -75,19 +76,73 @@ begin
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	elseif (case.eq.7) then 
 		; case 7. b.e12.12kaHose01SvNA.SST.030101-090012.nc
-		yr              = (/301, 900/)
+		yr              = (/401, 900/)
 		yrc             = yr
 		fname           = "b.e12.12kaHose01SvNA.SST.030101-090012.nc"
 		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.8) then 
+		; case 8. b.e12.12kaHose02SvNA.SST.030101-090012.nc
+		yr              = (/401, 900/)
+		yrc             = yr
+		fname           = "b.e12.12kaHose02SvNA.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.9) then 
+		; case 9. b.e12.15ka.SST.020101-070012.nc
+		yr              = (/201, 700/)
+		yrc             = yr
+		fname           = "b.e12.15ka.SST.020101-070012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.10) then 
+		; case 10. b.e12.15kaHose02SvNA.SST.030101-090012.nc
+		yr              = (/401, 900/)
+		yrc             = yr
+		fname           = "b.e12.15kaHose02SvNA.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.11) then 
+		; case 11. b.e12.18ka.SST.020101-070012.nc
+		yr              = (/201, 700/)
+		yrc             = yr
+		fname           = "b.e12.18ka.SST.020101-070012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.12) then 
+		; case 12. b.e12.21ka.SST.050101-100012.nc
+		yr              = (/501, 1000/)
+		yrc             = yr
+		fname           = "b.e12.21ka.SST.050101-100012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.13) then 
+		; case 13. b.e12.21kaHose02SvNA.SST.030101-060012.nc
+		yr              = (/401, 600/)
+		yrc             = yr
+		fname           = "b.e12.21kaHose02SvNA.SST.030101-060012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.14) then 
+		; case 14. b.e12.2XCO2.SST.030101-090012.nc
+		yr              = (/601, 900/)
+		yrc             = yr
+		fname           = "b.e12.2XCO2.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.15) then 
+		; case 15. b.e12.4XCO2.SST.030101-090012.nc
+		yr              = (/601, 900/)
+		yrc             = yr
+		fname           = "b.e12.4XCO2.SST.030101-090012.nc"
+		f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
+	elseif (case.eq.16) then
+                ; case 16. b.e12.0ka.SST.000101-150012.nc
+                yr              = (/101, 1500/)
+                yrc             = yr
+                fname           = "b.e12.0ka.SST.000101-150012.nc"
+                f               = addfile("/disk/cg6/yukoo/cesm1_timeslice/" + fname, "r")
 	end if
-	
+
 	fontsize        = 0.01                                 ; font size used in the EOF pattern plots. 
 	
 	neof            = 2                                        ; number of EOFs
 
 	latS            = -10                                      ; map range in lat and lon. 
 	latN            = 10
-	lonL            = 140                                      ;140E/. HadISST dataset lon in 0-360. 
+	lonL            = 110                                      ;140E/. HadISST dataset lon in 0-360. 
 	lonR            = 280                                      ;280E/80W
 
 	mn              = (yr(0:1)-yr(0))*12 + (/0,11/)               ; time in month index for the whole HadISST data from yr 1870 to 2010.
@@ -115,6 +170,7 @@ begin
 		sst             = f->sst(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
 		lat             = sst&latitude
 		sst             = lonFlip(sst) 
+		sst             = where(sst.eq.-1000., -1.8, sst)
 	else 
 		sst             = f->SST(mn(0):mn(1),:,:) ; Load SST arrays to variable sst.
 		sst!1="lat"
@@ -126,9 +182,30 @@ begin
 ; =================================================================
 ; Compute climatology of SST, its anomolies, and the variables in the Nino 3.4 region.
 ; =================================================================
-	sst_climatology      = clmMonTLL(sst(mnc(0):mnc(1),:,:)) ;# Compute SST climatology
-	sst_clim_anom        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
+	sst_climatology       = clmMonTLL(sst(mnc(0):mnc(1),:,:)) ;# Compute SST climatology
+	sst_clim_anom1        = calcMonAnomTLL(sst,sst_climatology) ;# compute the sst anomoly.
 	
+	;sst_clim_anom        = dtrend_leftdim(sst_clim_anom, False) ; detrend the whole dataset.
+	if (case.gt.1) then
+		sst_clim_anom        = dtrend_quadratic_msg_n(sst_clim_anom1, True, True, 0)
+		sst_clim_anom!0      = "time"
+		sst_clim_anom!1      = "lat"
+		sst_clim_anom!2      = "lon"
+		sst_clim_anom&time   = sst_clim_anom1&time
+		sst_clim_anom&lat    = sst_clim_anom1&lat
+		sst_clim_anom&lon    = sst_clim_anom1&lon
+	else
+		sst_clim_anom        = dtrend_quadratic_msg_n(sst_clim_anom1, True, True, 0)
+		sst_clim_anom!0      = "time"
+		sst_clim_anom!1      = "lat"
+		sst_clim_anom!2      = "lon"
+		sst_clim_anom&time   = sst_clim_anom1&time
+		sst_clim_anom&lat    = sst_clim_anom1&latitude
+		sst_clim_anom&lon    = sst_clim_anom1&longitude
+	end if 
+
+	printVarSummary(sst_clim_anom1)
+	printVarSummary(sst_clim_anom)
 	;nummonth = 12
 	;sst_nino34_annual_smoothed = runave_Wrap(sst_nino34,nummonth,0) ;# Running nummonth mean SST of Nino 3.4.
 	
@@ -168,15 +245,15 @@ begin
 	optEOF       = True       
 	optEOF@jopt  = 0   ; This is the default; most commonly used; no need to specify.
 	optETS       = True
-	optETS@jopt  = 1
+	optETS@jopt  = 0   ; if we calculate EOFs using a covariance matrix.
 	
-	xw0          = sst_clim_anom(mnc(0):mnc(1),{latS:latN},{lonL:lonR})
-	xw_all0      = sst_clim_anom(:,{latS:latN},{lonL:lonR})     ; xw and xw_all are only differed for the HadISST set.
+	xw           = sst_clim_anom(mnc(0):mnc(1),{latS:latN},{lonL:lonR})
+	xw_all       = sst_clim_anom(:,{latS:latN},{lonL:lonR})     ; xw and xw_all are only differed for the HadISST set.
 	
-	xw           = dtrend_leftdim(xw0, False)
-	xw_all       = dtrend_leftdim(xw_all0, False)
+	;xw           = dtrend_leftdim(xw0, False)
+	;xw_all       = dtrend_leftdim(xw_all0, False)
 	
-	printVarSummary(xw0)
+	;printVarSummary(xw0)
 	printVarSummary(xw)
 	
 	eof          = eofunc_n_Wrap(xw, neof, optEOF, 0)                     ; eof is computed with selected time periods for the HadISST set.
@@ -209,9 +286,12 @@ begin
 ; =================================================================
 ; Regress
 ; =================================================================
-	eof_regress  = eof
-	eof_regress  = (/ regCoef_n(eof_ts, xw_all, 1, 0) /)
+	;eof_regress  = eof
+	;eof_regress  = (/ regCoef_n(eof_ts, xw_all, 1, 0) /)
 	
+	eof_regress   = sst_clim_anom(0:neof-1,:,:)
+	eof_regress  = (/ regCoef_n(eof_ts, sst_clim_anom, 1, 0) /)
+
 ;*******************************************
 ; Figure 1. EOF pattern plots.
 ;*******************************************
@@ -222,7 +302,7 @@ begin
 	res                      = True         
 	res@gsnDraw              = False        ; don't draw yet
 	res@gsnFrame             = False        ; don't advance frame yet
-	res@gsnAddCyclic         = False        ; plotted data are not cyclic
+	res@gsnAddCyclic         = True        ; plotted data are not cyclic
 	res@gsnStringFontHeightF = fontsize
 	res@gsnPolarLableFontHeightF = fontsize
 	res@tmXBLabelFontHeightF = fontsize
@@ -230,10 +310,10 @@ begin
 	
 	res@mpCenterLonF         = 210.
 	;res@mpFillOn            = False        ; turn off map fill
-	res@mpMinLatF            = latS         ; zoom in on map
-	res@mpMaxLatF            = latN
-	res@mpMinLonF            = lonL
-	res@mpMaxLonF            = lonR
+	;res@mpMinLatF            = latS         ; zoom in on map
+	;res@mpMaxLatF            = latN
+	;res@mpMinLonF            = lonL
+	;res@mpMaxLonF            = lonR
 	res@mpLandFillColor      = "gray70"
 	
 	res@tiYAxisString        = " "          ; no y label.
@@ -245,7 +325,7 @@ begin
 	;res@cnFillPalette       = "amwg_blueyellowred"
 	res@cnFillPalette        = "temp_19lev"
 	res@cnLevelSelectionMode = "ExplicitLevels"
-	res@cnLevels             = fspan(-0.7,0.7,15)
+	res@cnLevels             = fspan(-0.9,0.9,19)
 	res@lbLabelBarOn         = False       ; turn off individual lb's
 										  ; set symmetric plot min/max
 	;symMinMaxPlt(eof, 16, False, res)       ; contributed.ncl
@@ -260,7 +340,6 @@ begin
   	yStrt = yr(0)
   	yLast = yr(1)
 	resP@gsnPanelMainString   = "EOF patterns"
-	resP@cnLevels             = fspan(-0.7,0.7,15)
 	
 	;============================================================
 	; add custom label bar
@@ -287,10 +366,12 @@ begin
 	;labels = (/"-0.7","-0.6","-0.5","-0.4","-0.3","-0.2","-0.1","0.0","0.1","0.2","0.3","0.4","0.5","0.6","0.7"/)
 	;nlevels = dimsizes(levels) 
 	
-	posx = (/0.02, 0.02/)
-	posy = (/0.95, 0.75/)
-	res@vpWidthF              = 0.95
-	;res@vpHeightF            = 0.4
+	;posx = (/0.02, 0.02/)
+	;posy = (/0.95, 0.75/)
+	posx = (/0.05, 0.05/)
+	posy = (/0.95, 0.48/)
+	res@vpWidthF              = 0.90
+	res@vpHeightF             = 0.35
 	;res@vpKeepAspect         = False
 	do n = 0, neof-1
 		res@vpXF   = posx(n)
@@ -300,8 +381,8 @@ begin
 		plot_eof(n)           = gsn_csm_contour_map(wks,eof_regress(n,:,:),res)
 	end do
 	; plot customized colobar.
-	gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.57, lbres)
-	
+	;gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.57, lbres)
+	gsn_labelbar_ndc( wks, ncol, lab, 0.5-lbres@vpWidthF/2, 0.06, lbres)
 	draw(wks)
 	frame(wks)
 
